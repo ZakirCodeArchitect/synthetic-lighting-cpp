@@ -129,13 +129,34 @@ void subtractAmbient(const PPMImage& totalImage, const PPMImage& ambientImage, P
     }
 }
 
-// Function to display the menu
+// Function to change the color of a light source
+void changeLightColor(PPMImage& image, float redScale, float greenScale, float blueScale) {
+    for (int i = 0; i < image.height; ++i) {
+        for (int j = 0; j < image.width; ++j) {
+            image.pixels[i][j][0] = (unsigned char)(image.pixels[i][j][0] * redScale);   // Red channel
+            image.pixels[i][j][1] = (unsigned char)(image.pixels[i][j][1] * greenScale); // Green channel
+            image.pixels[i][j][2] = (unsigned char)(image.pixels[i][j][2] * blueScale); // Blue channel
+        }
+    }
+}
+
+// Function to display the color options
+void displayColorMenu() {
+    cout << "Select a color to apply:" << endl;
+    cout << "1. Red" << endl;
+    cout << "2. Green" << endl;
+    cout << "3. Blue" << endl;
+    cout << "Enter your choice: ";
+}
+
+// Function to display the main menu
 void displayMenu() {
     cout << "PPM File Reader/Writer" << endl;
     cout << "1. Read a PPM file" << endl;
     cout << "2. Write a PPM file" << endl;
     cout << "3. Isolate light contribution (Task 2)" << endl;
-    cout << "4. Exit" << endl;
+    cout << "4. Change light color (Task 3)" << endl;
+    cout << "5. Exit" << endl;
     cout << "Enter your choice: ";
 }
 
@@ -143,6 +164,9 @@ int main() {
     PPMImage ambientImage, totalImage, resultImage;
     string filename;
     int choice;
+
+    // Declare scaling factors outside the switch statement
+    float redScale = 0.0, greenScale = 0.0, blueScale = 0.0;
 
     while (true) {
         displayMenu();
@@ -204,15 +228,62 @@ int main() {
                     if (writePPM(filename, resultImage)) {
                         cout << "Isolated light contribution saved successfully!" << endl;
                     }
-
-                    // Free memory for the result image
-                    freePixels(resultImage.pixels, resultImage.width, resultImage.height);
                 }
                 break;
 
-            case 4: // Exit
+            case 4: // Change light color (Task 3)
+                if (resultImage.magicNumber.empty()) {
+                    cout << "Error: No isolated light contribution loaded. Please perform Task 2 first." << endl;
+                    break;
+                }
+
+                // Display color options
+                displayColorMenu();
+                int colorChoice;
+                cin >> colorChoice;
+
+                // Clear the input buffer after reading the color choice
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                // Set scaling factors based on the selected color
+                switch (colorChoice) {
+                    case 1: // Red
+                        redScale = 1.0;
+                        greenScale = 0.0;
+                        blueScale = 0.0;
+                        break;
+                    case 2: // Green
+                        redScale = 0.0;
+                        greenScale = 1.0;
+                        blueScale = 0.0;
+                        break;
+                    case 3: // Blue
+                        redScale = 0.0;
+                        greenScale = 0.0;
+                        blueScale = 1.0;
+                        break;
+                    default:
+                        cout << "Invalid choice. No color change applied." << endl;
+                        break;
+                }
+
+                // Change the light color
+                changeLightColor(resultImage, redScale, greenScale, blueScale);
+
+                // Save the result
+                cout << "Enter the output PPM file name for the modified light color: ";
+                getline(cin, filename);
+                if (writePPM(filename, resultImage)) {
+                    cout << "Modified light color saved successfully!" << endl;
+                }
+                break;
+
+            case 5: // Exit
                 if (!ambientImage.magicNumber.empty()) {
                     freePixels(ambientImage.pixels, ambientImage.width, ambientImage.height); // Free memory before exiting
+                }
+                if (!resultImage.magicNumber.empty()) {
+                    freePixels(resultImage.pixels, resultImage.width, resultImage.height); // Free memory before exiting
                 }
                 cout << "Exiting the program. Goodbye!" << endl;
                 return 0;
