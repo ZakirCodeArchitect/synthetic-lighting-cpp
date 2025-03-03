@@ -152,6 +152,25 @@ void createNegativeLight(const PPMImage& totalImage, const PPMImage& lightImage,
     }
 }
 
+// Function to convert a color image to grayscale
+void convertToGrayscale(const PPMImage& colorImage, PPMImage& grayscaleImage) {
+    for (int i = 0; i < colorImage.height; ++i) {
+        for (int j = 0; j < colorImage.width; ++j) {
+            // Calculate grayscale value using the weighted sum formula
+            unsigned char grayValue = (unsigned char)(
+                0.299 * colorImage.pixels[i][j][0] + // Red channel
+                0.587 * colorImage.pixels[i][j][1] + // Green channel
+                0.114 * colorImage.pixels[i][j][2]   // Blue channel
+            );
+
+            // Set all three channels (R, G, B) to the grayscale value
+            grayscaleImage.pixels[i][j][0] = grayValue;
+            grayscaleImage.pixels[i][j][1] = grayValue;
+            grayscaleImage.pixels[i][j][2] = grayValue;
+        }
+    }
+}
+
 // Function to compute the weighted average of two images
 void weightedAverage(const PPMImage& imageA, const PPMImage& imageB, PPMImage& resultImage, float weight) {
     for (int i = 0; i < imageA.height; ++i) {
@@ -182,12 +201,13 @@ void displayMenu() {
     cout << "4. Change light color (Task 3)" << endl;
     cout << "5. Create negative light effects (Task 4)" << endl;
     cout << "6. Weighted Average of Two Images (Task 5)" << endl;
-    cout << "7. Exit" << endl;
+    cout << "7. Convert to Grayscale (Task 6)" << endl;
+    cout << "8. Exit" << endl;
     cout << "Enter your choice: ";
 }
 
 int main() {
-    PPMImage ambientImage, totalImage, resultImage, negativeImage, imageA, imageB;
+    PPMImage ambientImage, totalImage, resultImage, negativeImage, imageA, imageB, grayscaleImage;
     string filename;
     int choice;
 
@@ -373,7 +393,34 @@ int main() {
                 freePixels(resultImage.pixels, resultImage.width, resultImage.height);
                 break;
 
-            case 7: // Exit
+            case 7: // Convert to Grayscale (Task 6)
+                if (ambientImage.magicNumber.empty()) {
+                    cout << "Error: No image data loaded. Please read a PPM file first." << endl;
+                    break;
+                }
+
+                // Allocate memory for the grayscale image
+                grayscaleImage.magicNumber = "P6";
+                grayscaleImage.width = ambientImage.width;
+                grayscaleImage.height = ambientImage.height;
+                grayscaleImage.maxColorValue = ambientImage.maxColorValue;
+                grayscaleImage.pixels = allocatePixels(grayscaleImage.width, grayscaleImage.height);
+
+                // Convert the image to grayscale
+                convertToGrayscale(ambientImage, grayscaleImage);
+
+                // Save the result
+                cout << "Enter the output PPM file name for the grayscale image: ";
+                getline(cin, filename);
+                if (writePPM(filename, grayscaleImage)) {
+                    cout << "Grayscale image saved successfully!" << endl;
+                }
+
+                // Free memory for the grayscale image
+                freePixels(grayscaleImage.pixels, grayscaleImage.width, grayscaleImage.height);
+                break;
+
+            case 8: // Exit
                 if (!ambientImage.magicNumber.empty()) {
                     freePixels(ambientImage.pixels, ambientImage.width, ambientImage.height); // Free memory before exiting
                 }
