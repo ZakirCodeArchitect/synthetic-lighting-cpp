@@ -140,6 +140,18 @@ void changeLightColor(PPMImage& image, float redScale, float greenScale, float b
     }
 }
 
+// Function to create negative light effects
+void createNegativeLight(const PPMImage& totalImage, const PPMImage& lightImage, PPMImage& resultImage) {
+    for (int i = 0; i < totalImage.height; ++i) {
+        for (int j = 0; j < totalImage.width; ++j) {
+            for (int k = 0; k < 3; ++k) { // Loop through R, G, B channels
+                int value = (int)totalImage.pixels[i][j][k] - (int)lightImage.pixels[i][j][k];
+                resultImage.pixels[i][j][k] = (unsigned char)(value < 0 ? 0 : value); // Clamp to 0 if negative
+            }
+        }
+    }
+}
+
 // Function to display the color options
 void displayColorMenu() {
     cout << "Select a color to apply:" << endl;
@@ -156,12 +168,13 @@ void displayMenu() {
     cout << "2. Write a PPM file" << endl;
     cout << "3. Isolate light contribution (Task 2)" << endl;
     cout << "4. Change light color (Task 3)" << endl;
-    cout << "5. Exit" << endl;
+    cout << "5. Create negative light effects (Task 4)" << endl;
+    cout << "6. Exit" << endl;
     cout << "Enter your choice: ";
 }
 
 int main() {
-    PPMImage ambientImage, totalImage, resultImage;
+    PPMImage ambientImage, totalImage, resultImage, negativeImage;
     string filename;
     int choice;
 
@@ -278,7 +291,34 @@ int main() {
                 }
                 break;
 
-            case 5: // Exit
+            case 5: // Create negative light effects (Task 4)
+                if (resultImage.magicNumber.empty()) {
+                    cout << "Error: No isolated light contribution loaded. Please perform Task 2 first." << endl;
+                    break;
+                }
+
+                // Allocate memory for the negative image
+                negativeImage.magicNumber = "P6";
+                negativeImage.width = totalImage.width;
+                negativeImage.height = totalImage.height;
+                negativeImage.maxColorValue = totalImage.maxColorValue;
+                negativeImage.pixels = allocatePixels(negativeImage.width, negativeImage.height);
+
+                // Create negative light effects
+                createNegativeLight(totalImage, resultImage, negativeImage);
+
+                // Save the result
+                cout << "Enter the output PPM file name for the negative light effect: ";
+                getline(cin, filename);
+                if (writePPM(filename, negativeImage)) {
+                    cout << "Negative light effect saved successfully!" << endl;
+                }
+
+                // Free memory for the negative image
+                freePixels(negativeImage.pixels, negativeImage.width, negativeImage.height);
+                break;
+
+            case 6: // Exit
                 if (!ambientImage.magicNumber.empty()) {
                     freePixels(ambientImage.pixels, ambientImage.width, ambientImage.height); // Free memory before exiting
                 }
