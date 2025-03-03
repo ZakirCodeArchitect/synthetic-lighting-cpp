@@ -22,5 +22,5 @@ Make sure you have:
 ### Installation  
 1. Clone the repository:  
    ```sh
-   git clone https://github.com/yourusername/synthetic-lighting-cpp.git
+   git clone https://github.com/CodeArchitectZakir/synthetic-lighting-cpp.git
    cd synthetic-lighting-cpp
