@@ -152,6 +152,18 @@ void createNegativeLight(const PPMImage& totalImage, const PPMImage& lightImage,
     }
 }
 
+// Function to compute the weighted average of two images
+void weightedAverage(const PPMImage& imageA, const PPMImage& imageB, PPMImage& resultImage, float weight) {
+    for (int i = 0; i < imageA.height; ++i) {
+        for (int j = 0; j < imageA.width; ++j) {
+            for (int k = 0; k < 3; ++k) { // Loop through R, G, B channels
+                float value = weight * imageA.pixels[i][j][k] + (1 - weight) * imageB.pixels[i][j][k];
+                resultImage.pixels[i][j][k] = (unsigned char)(value < 0 ? 0 : (value > 255 ? 255 : value)); // Clamp to 0-255
+            }
+        }
+    }
+}
+
 // Function to display the color options
 void displayColorMenu() {
     cout << "Select a color to apply:" << endl;
@@ -169,12 +181,13 @@ void displayMenu() {
     cout << "3. Isolate light contribution (Task 2)" << endl;
     cout << "4. Change light color (Task 3)" << endl;
     cout << "5. Create negative light effects (Task 4)" << endl;
-    cout << "6. Exit" << endl;
+    cout << "6. Weighted Average of Two Images (Task 5)" << endl;
+    cout << "7. Exit" << endl;
     cout << "Enter your choice: ";
 }
 
 int main() {
-    PPMImage ambientImage, totalImage, resultImage, negativeImage;
+    PPMImage ambientImage, totalImage, resultImage, negativeImage, imageA, imageB;
     string filename;
     int choice;
 
@@ -318,7 +331,49 @@ int main() {
                 freePixels(negativeImage.pixels, negativeImage.width, negativeImage.height);
                 break;
 
-            case 6: // Exit
+            case 6: // Weighted Average of Two Images (Task 5)
+                cout << "Enter the first PPM file name (Image A): ";
+                getline(cin, filename);
+                if (!readPPM(filename, imageA)) {
+                    break;
+                }
+
+                cout << "Enter the second PPM file name (Image B): ";
+                getline(cin, filename);
+                if (!readPPM(filename, imageB)) {
+                    break;
+                }
+
+                // Check if the images have the same dimensions
+                if (imageA.width != imageB.width || imageA.height != imageB.height) {
+                    cout << "Error: The two images must have the same dimensions." << endl;
+                    break;
+                }
+
+                // Allocate memory for the result image
+                resultImage.magicNumber = "P6";
+                resultImage.width = imageA.width;
+                resultImage.height = imageA.height;
+                resultImage.maxColorValue = imageA.maxColorValue;
+                resultImage.pixels = allocatePixels(resultImage.width, resultImage.height);
+
+                // Generate a sequence of images with varying weights
+                for (int i = 0; i <= 10; ++i) {
+                    float weight = i * 0.1f; // Vary weight from 0.0 to 1.0 in steps of 0.1
+                    weightedAverage(imageA, imageB, resultImage, weight);
+
+                    // Save the result
+                    string outputFilename = "morph_" + to_string(i) + ".ppm";
+                    if (writePPM(outputFilename, resultImage)) {
+                        cout << "Saved: " << outputFilename << endl;
+                    }
+                }
+
+                // Free memory for the result image
+                freePixels(resultImage.pixels, resultImage.width, resultImage.height);
+                break;
+
+            case 7: // Exit
                 if (!ambientImage.magicNumber.empty()) {
                     freePixels(ambientImage.pixels, ambientImage.width, ambientImage.height); // Free memory before exiting
                 }
